@@ -7,6 +7,10 @@ import './index.css'
 import { App } from './App'
 import { AuthProvider } from './lib/auth/AuthProvider'
 import { DataProvider } from './lib/data-context'
+import * as firestore from 'firebase/firestore'
+import * as auth from 'firebase/auth'
+void firestore
+void auth
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 

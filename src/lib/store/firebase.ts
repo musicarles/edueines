@@ -7,10 +7,10 @@ import {
   setDoc,
   updateDoc,
   writeBatch,
-} from 'firebase/firestore'
+} from '../firebase'
+import { getDb } from '../firebase'
 import type { CollectionName } from '../types'
 import type { Store } from './types'
-import { getDb } from '../firebase'
 import { nowIso } from '../utils'
 
 export const firebaseStore: Store = {
@@ -64,7 +64,6 @@ export const firebaseStore: Store = {
       await batch.commit()
       return []
     } catch {
-      // Another tab reserved a key between the read and the write.
       const retaken: string[] = []
       for (const key of unique) {
         const snapshot = await getDoc(doc(getDb(), 'locks', key))

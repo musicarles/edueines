@@ -32,19 +32,14 @@ service cloud.firestore {
       return isStaff() && adminData().role == 'superadmin';
     }
 
-    function isPublicTool() {
-      return resource.data.status == 'publicada'
-        || resource.data.status == 'cal_actualitzar';
-    }
-
-    // Catàleg públic: només les fitxes publicades o pendents d'actualitzar.
+    // Catàleg públic: totes les fitxes són llegibles (el client filtra les no públiques).
     match /tools/{toolId} {
-      allow read: if isPublicTool() || isStaff();
+      allow read: if true;
       allow create, update, delete: if isStaff();
     }
 
     match /categories/{categoryId} {
-      allow read: if resource.data.active == true || isStaff();
+      allow read: if true;
       allow create, update, delete: if isStaff();
     }
 

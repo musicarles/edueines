@@ -26,20 +26,35 @@ function githubPagesFallback(): Plugin {
   }
 }
 
+const firebaseSideEffect = (id: string) => id.includes('firebase')
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, root, '')
 
   return {
     base: env.VITE_BASE_PATH || '/',
-    plugins: [react(), tailwindcss(), githubPagesFallback()],
-    resolve: {
-      alias: {
-        '@': path.join(root, 'src'),
+    optimizeDeps: {
+      rolldownOptions: {
+        treeshake: {
+          moduleSideEffects: firebaseSideEffect,
+        },
       },
     },
     build: {
       target: 'es2022',
       sourcemap: false,
+      rollupOptions: {
+        treeshake: {
+          moduleSideEffects: firebaseSideEffect,
+        },
+      },
+    },
+    plugins: [react(), tailwindcss(), githubPagesFallback()],
+    resolve: {
+      dedupe: ['firebase', 'firebase/app', 'firebase/auth', 'firebase/firestore', '@firebase/app', '@firebase/firestore', '@firebase/auth'],
+      alias: {
+        '@': path.join(root, 'src'),
+      },
     },
   }
 })

@@ -5,7 +5,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from '../firebase'
 import { ADMIN_EMAIL } from '../env'
 import { getDb, getFirebaseAuth } from '../firebase'
 import type { AdminUser, AuthSession, Invite, Role, UserProfile } from '../types'
