@@ -55,14 +55,7 @@ Obre `http://127.0.0.1:5173`.
 
 El mode per defecte és `local`: les dades es guarden a **IndexedDB** del navegador. El catàleg inicial (12 eines i 12 categories) es carrega automàticament el primer cop.
 
-### Accés de demostració
 
-- Usuari: `admin`
-- Contrasenya: `crp1617G`
-
-> El mode local és només per provar l'aplicació. Les contrasenyes es desen com a hash PBKDF2, però les dades no es comparteixen entre persones ni navegadors. Per a un equip real, fes servir Firebase.
-
----
 
 ## Mode Firebase (producció)
 
