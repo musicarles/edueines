@@ -1,0 +1,126 @@
+rules_version = '2';
+
+// Edueines — regles de seguretat de Cloud Firestore
+//
+// Model de permisos:
+//   - Visita anònima: pot llegir eines i categories públiques, i crear
+//     propostes i avisos amb una sessió anònima de Firebase Authentication.
+//   - Personal (admins/{uid} amb active == true): accés complet al catàleg.
+//   - Superadministrador: a més, pot gestionar comptes i invitacions.
+//
+// El primer compte d'administració s'ha de crear manualment a la consola de
+// Firebase (Authentication + document admins/{uid}) abans de desplegar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function adminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
+
+    function isStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && adminData().active == true;
+    }
+
+    function isSuperadmin() {
+      return isStaff() && adminData().role == 'superadmin';
+    }
+
+    function isPublicTool() {
+      return resource.data.status == 'publicada'
+        || resource.data.status == 'cal_actualitzar';
+    }
+
+    // Catàleg públic: només les fitxes publicades o pendents d'actualitzar.
+    match /tools/{toolId} {
+      allow read: if isPublicTool() || isStaff();
+      allow create, update, delete: if isStaff();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if resource.data.active == true || isStaff();
+      allow create, update, delete: if isStaff();
+    }
+
+    // Les propostes no són públiques: només les veu el personal.
+    match /proposals/{proposalId} {
+      allow read: if isStaff();
+      allow create: if signedIn()
+        && request.resource.data.status == 'pendent'
+        && request.resource.data.name is string
+        && request.resource.data.officialUrl is string
+        && request.resource.data.reference is string;
+      allow update, delete: if isStaff();
+    }
+
+    // Avisos de canvi enviats des de les fitxes públiques.
+    match /reports/{reportId} {
+      allow read: if isStaff();
+      allow create: if signedIn()
+        && request.resource.data.status == 'nou'
+        && request.resource.data.toolId is string
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 10;
+      allow update, delete: if isStaff();
+    }
+
+    // Bloquejos de duplicats. Es llegeixen per comprovar si un nom o domini
+    // ja està reservat i només el personal els pot alliberar.
+    match /locks/{lockId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && !exists(/databases/$(database)/documents/locks/$(lockId));
+      allow update: if false;
+      allow delete: if isStaff();
+    }
+
+    match /verifications/{verificationId} {
+      allow read, create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    // L'historial és immutable des del client.
+    match /history/{entryId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    // Comptes d'administració. Cadascú pot llegir el seu propi perfil.
+    match /admins/{uid} {
+      allow read: if isStaff()
+        || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isSuperadmin();
+    }
+
+    match /users/{uid} {
+      allow read: if isStaff()
+        || (signedIn() && request.auth.uid == uid);
+      allow create, update, delete: if isStaff();
+    }
+
+    // Invitacions: el personal les gestiona; la persona invitada només pot
+    // llegir la seva per activar el compte.
+    match /invites/{email} {
+      allow read: if isStaff()
+        || (signedIn() && request.auth.token.email == email);
+      allow create, update, delete: if isStaff();
+    }
+
+    // Marcadors interns (importació inicial, etc.).
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Qualsevol altra col·lecció queda tancada per defecte.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
