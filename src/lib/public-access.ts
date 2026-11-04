@@ -7,6 +7,11 @@ import { DATA_MODE } from './env'
  */
 export async function ensurePublicWriteAccess(): Promise<void> {
   if (DATA_MODE !== 'firebase') return
-  const module = await import('./auth/firebase')
-  await module.ensureAnonymousAuth()
+  try {
+    const module = await import('./auth/firebase')
+    await module.ensureAnonymousAuth()
+  } catch {
+    // L’escriptura pública ja no requereix autenticació; si l’auth anònima
+    // falla (extensions, cookies bloquejades, etc.) continuem igualment.
+  }
 }

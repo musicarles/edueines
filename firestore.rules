@@ -46,8 +46,7 @@ service cloud.firestore {
     // Les propostes no són públiques: només les veu el personal.
     match /proposals/{proposalId} {
       allow read: if isStaff();
-      allow create: if signedIn()
-        && request.resource.data.status == 'pendent'
+      allow create: if request.resource.data.status == 'pendent'
         && request.resource.data.name is string
         && request.resource.data.officialUrl is string
         && request.resource.data.reference is string;
@@ -57,8 +56,7 @@ service cloud.firestore {
     // Avisos de canvi enviats des de les fitxes públiques.
     match /reports/{reportId} {
       allow read: if isStaff();
-      allow create: if signedIn()
-        && request.resource.data.status == 'nou'
+      allow create: if request.resource.data.status == 'nou'
         && request.resource.data.toolId is string
         && request.resource.data.message is string
         && request.resource.data.message.size() >= 10;
@@ -68,8 +66,8 @@ service cloud.firestore {
     // Bloquejos de duplicats. Es llegeixen per comprovar si un nom o domini
     // ja està reservat i només el personal els pot alliberar.
     match /locks/{lockId} {
-      allow read: if signedIn();
-      allow create: if signedIn() && !exists(/databases/$(database)/documents/locks/$(lockId));
+      allow read: if true;
+      allow create: if !exists(/databases/$(database)/documents/locks/$(lockId));
       allow update: if false;
       allow delete: if isStaff();
     }
